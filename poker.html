@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker WebApp</title>
+    <title>Poker Multiplayer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -76,25 +77,14 @@
     </script>
 
     <div class="container mx-auto px-4 py-4 max-w-6xl">
-        <!-- Header -->
-        <div class="text-center mb-6">
-            <h1 class="text-4xl font-bold text-primary mb-2">🃏 Poker WebApp</h1>
-            <p class="text-gray-400">Техасский холдем для двух игроков</p>
-        </div>
-
-        <!-- Game Setup -->
-        <div id="setupScreen" class="text-center py-8">
+        <!-- Экран выбора комнаты -->
+        <div id="roomScreen" class="text-center py-8">
             <div class="bg-gray-800 rounded-lg p-8 max-w-md mx-auto">
-                <h2 class="text-2xl font-bold mb-6">Настройка игры</h2>
-                <div class="space-y-4">
+                <h2 class="text-2xl font-bold mb-6">Мультиплеер Покер</h2>
+                <div class="space-y-4 mb-6">
                     <div>
-                        <label class="block text-sm font-medium mb-2">Имя игрока 1:</label>
-                        <input type="text" id="player1Name" value="Игрок 1" 
-                               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Имя игрока 2:</label>
-                        <input type="text" id="player2Name" value="Игрок 2" 
+                        <label class="block text-sm font-medium mb-2">Ваше имя:</label>
+                        <input type="text" id="playerName" value="Игрок" 
                                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary">
                     </div>
                     <div>
@@ -103,14 +93,51 @@
                                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary">
                     </div>
                 </div>
-                <button onclick="startGame()" 
-                        class="mt-6 w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                    Начать игру
+                <div class="space-y-3">
+                    <button onclick="createRoom()" 
+                            class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        Создать комнату
+                    </button>
+                    <div class="flex items-center my-4">
+                        <hr class="flex-grow border-gray-600">
+                        <span class="px-4 text-gray-400">или</span>
+                        <hr class="flex-grow border-gray-600">
+                    </div>
+                    <div class="flex space-x-2">
+                        <input type="text" id="roomId" placeholder="ID комнаты" 
+                               class="flex-grow px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                        <button onclick="joinRoom()" 
+                                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors">
+                            Присоединиться
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Экран ожидания -->
+        <div id="waitingScreen" class="hidden text-center py-8">
+            <div class="bg-gray-800 rounded-lg p-8 max-w-md mx-auto">
+                <h2 class="text-2xl font-bold mb-4">Ожидание соперника</h2>
+                <div class="mb-6">
+                    <div class="text-lg mb-2">ID комнаты:</div>
+                    <div id="roomIdDisplay" class="text-3xl font-mono font-bold text-primary"></div>
+                </div>
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <div class="flex items-center justify-center">
+                        <div class="animate-pulse h-3 w-3 bg-blue-500 rounded-full mr-2"></div>
+                        <div class="animate-pulse h-3 w-3 bg-blue-500 rounded-full mr-2"></div>
+                        <div class="animate-pulse h-3 w-3 bg-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+                <button onclick="cancelWaiting()" 
+                        class="mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                    Отмена
                 </button>
             </div>
         </div>
 
-        <!-- Game Screen -->
+        <!-- Игровой экран -->
         <div id="gameScreen" class="hidden">
             <!-- Opponent (Player 2) -->
             <div class="mb-6">
@@ -179,27 +206,27 @@
 
             <!-- Action Buttons -->
             <div id="actionButtons" class="grid grid-cols-2 gap-3 mb-6">
-                <button id="foldBtn" onclick="playerAction('fold')" 
+                <button id="foldBtn" onclick="sendPlayerAction('fold')" 
                         class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
                     Сброс
                 </button>
-                <button id="checkCallBtn" onclick="playerAction('check')" 
+                <button id="checkCallBtn" onclick="sendPlayerAction('check')" 
                         class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
                     Чек
                 </button>
-                <button id="bet20Btn" onclick="playerAction('bet', 20)" 
+                <button id="bet20Btn" onclick="sendPlayerAction('bet', 20)" 
                         class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
                     Бет $20
                 </button>
-                <button id="bet50Btn" onclick="playerAction('bet', 50)" 
+                <button id="bet50Btn" onclick="sendPlayerAction('bet', 50)" 
                         class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
                     Бет $50
                 </button>
-                <button id="bet100Btn" onclick="playerAction('bet', 100)" 
+                <button id="bet100Btn" onclick="sendPlayerAction('bet', 100)" 
                         class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm">
                     Бет $100
                 </button>
-                <button id="showBtn" onclick="playerAction('show')" 
+                <button id="showBtn" onclick="sendPlayerAction('show')" 
                         class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-colors hidden">
                     Открыть
                 </button>
@@ -213,7 +240,7 @@
 
             <!-- Reset Button -->
             <div class="text-center mt-6">
-                <button onclick="resetGame()" 
+                <button onclick="sendResetGame()" 
                         class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
                     Новая игра
                 </button>
@@ -231,7 +258,7 @@
                         class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                     Закрыть
                 </button>
-                <button onclick="closeWinnerModal(); resetGame()" 
+                <button onclick="closeWinnerModal(); sendResetGame()" 
                         class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-4 rounded">
                     Новая игра
                 </button>
@@ -243,8 +270,6 @@
         // Константы
         const SUITS = ['♠', '♥', '♦', '♣'];
         const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-        const RANKS_VALUES = Object.fromEntries(RANKS.map((r, i) => [r, i + 2]));
-        
         const SMALL_BLIND = 10;
         const BIG_BLIND = 20;
 
@@ -261,35 +286,161 @@
             smallBlindPos: 0
         };
 
-        // Класс игрока
-        class Player {
-            constructor(name, balance) {
-                this.name = name;
-                this.hand = [];
-                this.balance = balance;
-                this.currentBet = 0;
-                this.folded = false;
+        // WebSocket соединение
+        let socket;
+        let roomId = null;
+        let playerId = null;
+        let playerName = "";
+        let startBalance = 1000;
+
+        // Инициализация WebSocket
+        function initWebSocket() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsHost = window.location.host;
+            socket = new WebSocket(`${wsProtocol}//${wsHost}`);
+
+            socket.onopen = () => {
+                console.log('Соединение установлено');
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleServerMessage(data);
+            };
+
+            socket.onclose = () => {
+                console.log('Соединение закрыто');
+                if (document.getElementById('gameScreen').classList.contains('hidden')) {
+                    alert('Соединение с сервером потеряно');
+                    showScreen('roomScreen');
+                }
+            };
+        }
+
+        // Обработка сообщений от сервера
+        function handleServerMessage(data) {
+            switch (data.type) {
+                case 'roomCreated':
+                    roomId = data.roomId;
+                    playerId = data.playerId;
+                    document.getElementById('roomIdDisplay').textContent = roomId;
+                    showScreen('waitingScreen');
+                    break;
+                    
+                case 'error':
+                    alert(`Ошибка: ${data.message}`);
+                    break;
+                    
+                case 'gameStart':
+                    playerName = document.getElementById('playerName').value || 'Игрок';
+                    startBalance = parseInt(document.getElementById('startBalance').value) || 1000;
+                    
+                    // Инициализация игры
+                    game = data.gameState;
+                    
+                    // Определяем текущего игрока
+                    const currentPlayer = game.players.find(p => p.id === playerId);
+                    if (currentPlayer) {
+                        document.getElementById('player1Name').textContent = currentPlayer.name;
+                        document.getElementById('player1Avatar').textContent = currentPlayer.name[0].toUpperCase();
+                    }
+                    
+                    const otherPlayer = game.players.find(p => p.id !== playerId);
+                    if (otherPlayer) {
+                        document.getElementById('player2Name').textContent = otherPlayer.name;
+                        document.getElementById('player2Avatar').textContent = otherPlayer.name[0].toUpperCase();
+                    }
+                    
+                    showScreen('gameScreen');
+                    updateUI();
+                    break;
+                    
+                case 'gameUpdate':
+                    // Обновляем состояние игры
+                    game = data.gameState;
+                    updateUI();
+                    break;
+                    
+                case 'gameLog':
+                    addToLog(data.message);
+                    break;
+                    
+                case 'winner':
+                    showWinner(data.message);
+                    break;
             }
         }
 
-        // Генерация колоды
-        function getDeck() {
-            return RANKS.flatMap(rank => 
-                SUITS.map(suit => ({ rank, suit }))
-            );
+        // Создание комнаты
+        function createRoom() {
+            playerName = document.getElementById('playerName').value || 'Игрок';
+            startBalance = parseInt(document.getElementById('startBalance').value) || 1000;
+            
+            socket.send(JSON.stringify({
+                type: 'createRoom',
+                playerName,
+                balance: startBalance
+            }));
         }
 
-        // Перемешивание массива
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+        // Присоединение к комнате
+        function joinRoom() {
+            const roomIdInput = document.getElementById('roomId').value.trim();
+            if (!roomIdInput) {
+                alert('Введите ID комнаты');
+                return;
             }
-            return array;
+            
+            playerName = document.getElementById('playerName').value || 'Игрок';
+            startBalance = parseInt(document.getElementById('startBalance').value) || 1000;
+            
+            socket.send(JSON.stringify({
+                type: 'joinRoom',
+                roomId: roomIdInput,
+                playerName,
+                balance: startBalance
+            }));
+        }
+
+        // Отмена ожидания
+        function cancelWaiting() {
+            socket.send(JSON.stringify({
+                type: 'cancelWaiting',
+                roomId
+            }));
+            showScreen('roomScreen');
+        }
+
+        // Переключение экранов
+        function showScreen(screenId) {
+            ['roomScreen', 'waitingScreen', 'gameScreen'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        // Отправка действия игрока
+        function sendPlayerAction(action, amount = 0) {
+            socket.send(JSON.stringify({
+                type: 'playerAction',
+                roomId,
+                playerId,
+                action,
+                amount
+            }));
+        }
+
+        // Отправка запроса на сброс игры
+        function sendResetGame() {
+            socket.send(JSON.stringify({
+                type: 'resetGame',
+                roomId
+            }));
         }
 
         // Форматирование карт для отображения
         function formatCard(card) {
+            if (!card) return '';
             const color = (card.suit === '♥' || card.suit === '♦') ? 'text-red-500' : 'text-black';
             return `<div class="flex flex-col items-center justify-center h-full ${color}">
                         <div class="text-lg font-bold">${card.rank}</div>
@@ -300,7 +451,9 @@
         // Отображение карты в элементе
         function displayCard(elementId, card, hidden = false) {
             const element = document.getElementById(elementId);
-            if (hidden) {
+            if (!element) return;
+            
+            if (hidden || !card) {
                 element.className = 'card card-back w-16';
                 element.innerHTML = '';
             } else {
@@ -309,274 +462,24 @@
             }
         }
 
-        // Определение силы руки
-        function handRank(cards) {
-            const ranks = cards.map(c => RANKS.indexOf(c.rank)).sort((a, b) => b - a);
-            const suits = cards.map(c => c.suit);
-            const counts = {};
-            ranks.forEach(rank => counts[rank] = (counts[rank] || 0) + 1);
-            
-            const isFlush = suits.some(suit => suits.filter(s => s === suit).length >= 5);
-            const straight = findStraight(ranks);
-            
-            const countsArray = Object.entries(counts)
-                .map(([rank, count]) => [parseInt(rank), count])
-                .sort((a, b) => b[1] - a[1] || b[0] - a[0]);
-
-            // Проверка комбинаций (упрощенная версия)
-            if (countsArray[0][1] === 4) return [7, countsArray[0][0]]; // Каре
-            if (countsArray[0][1] === 3 && countsArray[1][1] >= 2) return [6, countsArray[0][0]]; // Фулл хаус
-            if (isFlush) return [5, Math.max(...ranks)]; // Флеш
-            if (straight) return [4, straight]; // Стрит
-            if (countsArray[0][1] === 3) return [3, countsArray[0][0]]; // Тройка
-            if (countsArray[0][1] === 2 && countsArray[1][1] === 2) return [2, Math.max(countsArray[0][0], countsArray[1][0])]; // Две пары
-            if (countsArray[0][1] === 2) return [1, countsArray[0][0]]; // Пара
-            return [0, Math.max(...ranks)]; // Старшая карта
-        }
-
-        function findStraight(ranks) {
-            const uniqueRanks = [...new Set(ranks)].sort((a, b) => b - a);
-            for (let i = 0; i <= uniqueRanks.length - 5; i++) {
-                if (uniqueRanks[i] - uniqueRanks[i + 4] === 4) {
-                    return uniqueRanks[i];
-                }
-            }
-            // Проверка на A-2-3-4-5
-            if (uniqueRanks.includes(12) && uniqueRanks.includes(0) && uniqueRanks.includes(1) && uniqueRanks.includes(2) && uniqueRanks.includes(3)) {
-                return 3;
-            }
-            return null;
-        }
-
-        // Сравнение рук
-        function compareHands(hand1, hand2) {
-            const rank1 = handRank(hand1);
-            const rank2 = handRank(hand2);
-            
-            if (rank1[0] > rank2[0]) return 1;
-            if (rank1[0] < rank2[0]) return -1;
-            if (rank1[1] > rank2[1]) return 1;
-            if (rank1[1] < rank2[1]) return -1;
-            return 0;
-        }
-
-        // Начало игры
-        function startGame() {
-            const player1Name = document.getElementById('player1Name').value || 'Игрок 1';
-            const player2Name = document.getElementById('player2Name').value || 'Игрок 2';
-            const startBalance = parseInt(document.getElementById('startBalance').value) || 1000;
-
-            game.players = [
-                new Player(player1Name, startBalance),
-                new Player(player2Name, startBalance)
-            ];
-
-            document.getElementById('setupScreen').classList.add('hidden');
-            document.getElementById('gameScreen').classList.remove('hidden');
-
-            updatePlayerNames();
-            dealNewHand();
-        }
-
-        // Обновление имен игроков в интерфейсе
-        function updatePlayerNames() {
-            document.getElementById('player1Name').textContent = game.players[0].name;
-            document.getElementById('player2Name').textContent = game.players[1].name;
-            document.getElementById('player1Avatar').textContent = game.players[0].name[0].toUpperCase();
-            document.getElementById('player2Avatar').textContent = game.players[1].name[0].toUpperCase();
-        }
-
-        // Раздача новой руки
-        function dealNewHand() {
-            // Сброс состояния
-            game.deck = shuffle(getDeck());
-            game.board = [];
-            game.pot = 0;
-            game.currentBet = BIG_BLIND;
-            game.stage = "preflop";
-            
-            game.players.forEach(player => {
-                player.hand = [];
-                player.currentBet = 0;
-                player.folded = false;
-            });
-
-            // Определение позиций
-            game.smallBlindPos = Math.random() < 0.5 ? 0 : 1;
-            const bbPos = 1 - game.smallBlindPos;
-
-            // Слепые ставки
-            game.players[game.smallBlindPos].balance -= SMALL_BLIND;
-            game.players[game.smallBlindPos].currentBet = SMALL_BLIND;
-            game.players[bbPos].balance -= BIG_BLIND;
-            game.players[bbPos].currentBet = BIG_BLIND;
-            game.pot = SMALL_BLIND + BIG_BLIND;
-
-            // Раздача карт
-            for (let i = 0; i < 2; i++) {
-                game.players[0].hand.push(game.deck.pop());
-                game.players[1].hand.push(game.deck.pop());
-            }
-
-            game.turn = game.smallBlindPos;
-            game.lastRaiser = bbPos;
-
-            addToLog("Новая рука! Слепые ставки размещены.");
-            updateUI();
-        }
-
-        // Действие игрока
-        function playerAction(action, amount = 0) {
-            const player = game.players[game.turn];
-            
-            switch(action) {
-                case 'fold':
-                    player.folded = true;
-                    addToLog(`${player.name} сбросил карты`);
-                    const winner = game.players.find(p => !p.folded);
-                    if (winner) {
-                        winner.balance += game.pot;
-                        showWinner(`${winner.name} выиграл банк $${game.pot}!`);
-                        return;
-                    }
-                    break;
-
-                case 'check':
-                    addToLog(`${player.name} чек`);
-                    nextTurn();
-                    break;
-
-                case 'call':
-                    const toCall = game.currentBet - player.currentBet;
-                    const callAmount = Math.min(toCall, player.balance);
-                    player.balance -= callAmount;
-                    player.currentBet += callAmount;
-                    game.pot += callAmount;
-                    addToLog(`${player.name} колл $${callAmount}`);
-                    nextTurn();
-                    break;
-
-                case 'bet':
-                    const toCal = game.currentBet - player.currentBet;
-                    const totalBet = toCal + amount;
-                    if (totalBet > player.balance) {
-                        addToLog("Недостаточно фишек!");
-                        return;
-                    }
-                    player.balance -= totalBet;
-                    player.currentBet += totalBet;
-                    game.currentBet = player.currentBet;
-                    game.pot += totalBet;
-                    game.lastRaiser = game.turn;
-                    addToLog(`${player.name} бет $${totalBet}`);
-                    nextTurn();
-                    break;
-
-                case 'show':
-                    revealCards();
-                    return;
-            }
-
-            updateUI();
-        }
-
-        // Следующий ход
-        function nextTurn() {
-            game.turn = 1 - game.turn;
-            
-            if (isRoundOver()) {
-                nextStage();
-            }
-        }
-
-        // Проверка окончания раунда
-        function isRoundOver() {
-            const activePlayers = game.players.filter(p => !p.folded);
-            if (activePlayers.length === 1) return true;
-            
-            const bets = activePlayers.map(p => p.currentBet);
-            return bets.every(bet => bet === game.currentBet);
-        }
-
-        // Следующая стадия
-        function nextStage() {
-            game.players.forEach(p => p.currentBet = 0);
-            game.currentBet = 0;
-            game.turn = game.smallBlindPos;
-
-            switch(game.stage) {
-                case "preflop":
-                    // Флоп
-                    for (let i = 0; i < 3; i++) {
-                        game.board.push(game.deck.pop());
-                    }
-                    game.stage = "flop";
-                    addToLog("Флоп открыт!");
-                    break;
-
-                case "flop":
-                    // Терн
-                    game.board.push(game.deck.pop());
-                    game.stage = "turn";
-                    addToLog("Терн открыт!");
-                    break;
-
-                case "turn":
-                    // Ривер
-                    game.board.push(game.deck.pop());
-                    game.stage = "river";
-                    addToLog("Ривер открыт!");
-                    break;
-
-                case "river":
-                    revealCards();
-                    return;
-            }
-
-            updateUI();
-        }
-
-        // Вскрытие карт
-        function revealCards() {
-            game.stage = "showdown";
-            
-            const hands = [
-                [...game.players[0].hand, ...game.board],
-                [...game.players[1].hand, ...game.board]
-            ];
-            
-            const comparison = compareHands(hands[0], hands[1]);
-            let winner, message;
-            
-            if (comparison === 1) {
-                winner = game.players[0];
-                message = `${winner.name} выиграл!`;
-            } else if (comparison === -1) {
-                winner = game.players[1];
-                message = `${winner.name} выиграл!`;
-            } else {
-                message = "Ничья! Банк делится поровну.";
-                game.players[0].balance += Math.floor(game.pot / 2);
-                game.players[1].balance += Math.ceil(game.pot / 2);
-                updateUI();
-                showWinner(message);
-                return;
-            }
-            
-            winner.balance += game.pot;
-            updateUI();
-            showWinner(`${message} Выигрыш: $${game.pot}`);
-        }
-
         // Обновление интерфейса
         function updateUI() {
+            if (!game.players || game.players.length < 2) return;
+            
+            const player1 = game.players[0];
+            const player2 = game.players[1];
+            
+            // Определяем текущего игрока
+            const currentPlayer = game.players.find(p => p.id === playerId);
+            const isPlayer1 = currentPlayer === player1;
+            
             // Обновление балансов
-            document.getElementById('player1Balance').textContent = `$${game.players[0].balance}`;
-            document.getElementById('player2Balance').textContent = `$${game.players[1].balance}`;
+            document.getElementById('player1Balance').textContent = `$${player1.balance}`;
+            document.getElementById('player2Balance').textContent = `$${player2.balance}`;
             
             // Обновление ставок
-            document.getElementById('player1Bet').textContent = game.players[0].currentBet > 0 ? `$${game.players[0].currentBet}` : '';
-            document.getElementById('player2Bet').textContent = game.players[1].currentBet > 0 ? `$${game.players[1].currentBet}` : '';
+            document.getElementById('player1Bet').textContent = player1.currentBet > 0 ? `$${player1.currentBet}` : '';
+            document.getElementById('player2Bet').textContent = player2.currentBet > 0 ? `$${player2.currentBet}` : '';
             
             // Обновление банка
             document.getElementById('potAmount').textContent = `$${game.pot}`;
@@ -587,17 +490,38 @@
             document.getElementById('currentBet').textContent = `Текущая ставка: $${game.currentBet}`;
 
             // Отображение карт игроков
-            if (game.players[0].hand.length > 0) {
-                displayCard('player1Card1', game.players[0].hand[0]);
-                displayCard('player1Card2', game.players[0].hand[1]);
+            if (player1.hand && player1.hand.length > 0) {
+                // Для текущего игрока всегда показываем карты
+                if (isPlayer1) {
+                    displayCard('player1Card1', player1.hand[0]);
+                    displayCard('player1Card2', player1.hand[1]);
+                } else {
+                    // Для противника показываем карты только на стадии showdown
+                    if (game.stage === "showdown") {
+                        displayCard('player1Card1', player1.hand[0]);
+                        displayCard('player1Card2', player1.hand[1]);
+                    } else {
+                        displayCard('player1Card1', null, true);
+                        displayCard('player1Card2', null, true);
+                    }
+                }
             }
             
-            if (game.stage === "showdown") {
-                displayCard('player2Card1', game.players[1].hand[0]);
-                displayCard('player2Card2', game.players[1].hand[1]);
-            } else {
-                displayCard('player2Card1', null, true);
-                displayCard('player2Card2', null, true);
+            if (player2.hand && player2.hand.length > 0) {
+                // Для текущего игрока всегда показываем карты
+                if (!isPlayer1) {
+                    displayCard('player2Card1', player2.hand[0]);
+                    displayCard('player2Card2', player2.hand[1]);
+                } else {
+                    // Для противника показываем карты только на стадии showdown
+                    if (game.stage === "showdown") {
+                        displayCard('player2Card1', player2.hand[0]);
+                        displayCard('player2Card2', player2.hand[1]);
+                    } else {
+                        displayCard('player2Card1', null, true);
+                        displayCard('player2Card2', null, true);
+                    }
+                }
             }
 
             // Отображение общих карт
@@ -613,7 +537,7 @@
             
             cardElements.forEach((elementId, index) => {
                 const element = document.getElementById(elementId);
-                if (game.board[index]) {
+                if (game.board && game.board[index]) {
                     element.classList.remove('hidden');
                     element.innerHTML = formatCard(game.board[index]);
                 } else {
@@ -624,31 +548,42 @@
 
         // Обновление кнопок действий
         function updateActionButtons() {
-            const player = game.players[game.turn];
-            const toCall = game.currentBet - player.currentBet;
+            const currentPlayer = game.players.find(p => p.id === playerId);
+            const toCall = game.currentBet - currentPlayer.currentBet;
             
             // Кнопка Check/Call
             const checkCallBtn = document.getElementById('checkCallBtn');
             if (toCall > 0) {
-                checkCallBtn.textContent = `Колл $${Math.min(toCall, player.balance)}`;
-                checkCallBtn.onclick = () => playerAction('call');
+                checkCallBtn.textContent = `Колл $${Math.min(toCall, currentPlayer.balance)}`;
+                checkCallBtn.onclick = () => sendPlayerAction('call');
             } else {
                 checkCallBtn.textContent = 'Чек';
-                checkCallBtn.onclick = () => playerAction('check');
+                checkCallBtn.onclick = () => sendPlayerAction('check');
             }
             
             // Кнопки ставок
-            updateBetButton('bet20Btn', 20, player, toCall);
-            updateBetButton('bet50Btn', 50, player, toCall);
-            updateBetButton('bet100Btn', 100, player, toCall);
+            updateBetButton('bet20Btn', 20, currentPlayer, toCall);
+            updateBetButton('bet50Btn', 50, currentPlayer, toCall);
+            updateBetButton('bet100Btn', 100, currentPlayer, toCall);
             
             // Кнопка показа карт
             const showBtn = document.getElementById('showBtn');
-            if (game.stage === "river") {
+            if (game.stage === "river" && game.turn === game.players.indexOf(currentPlayer)) {
                 showBtn.classList.remove('hidden');
             } else {
                 showBtn.classList.add('hidden');
             }
+            
+            // Отключение кнопок если не наш ход
+            const isMyTurn = game.turn === game.players.indexOf(currentPlayer);
+            const buttons = document.querySelectorAll('#actionButtons button');
+            buttons.forEach(btn => {
+                if (btn.id !== 'showBtn') {
+                    btn.disabled = !isMyTurn;
+                    btn.classList.toggle('opacity-50', !isMyTurn);
+                    btn.classList.toggle('cursor-not-allowed', !isMyTurn);
+                }
+            });
         }
 
         function updateBetButton(buttonId, amount, player, toCall) {
@@ -685,24 +620,10 @@
             document.getElementById('winnerModal').classList.add('hidden');
         }
 
-        // Сброс игры
-        function resetGame() {
-            document.getElementById('gameScreen').classList.add('hidden');
-            document.getElementById('setupScreen').classList.remove('hidden');
-            document.getElementById('gameLog').innerHTML = '';
-            
-            // Сброс всех элементов карт
-            ['player1Card1', 'player1Card2', 'player2Card1', 'player2Card2', 'flop1', 'flop2', 'flop3', 'turn', 'river'].forEach(id => {
-                const element = document.getElementById(id);
-                element.innerHTML = '';
-                element.className = 'card w-16 hidden';
-            });
-        }
-
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
-            // Автофокус на первое поле
-            document.getElementById('player1Name').focus();
+            initWebSocket();
+            document.getElementById('playerName').focus();
         });
     </script>
 </body>
